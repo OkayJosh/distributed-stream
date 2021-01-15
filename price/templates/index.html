@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container">
+    <br />
+    <router-view></router-view>
+    <div>
+
+        <ul v-if="pricesindex">
+            <span v-for="price in pricesindex">
+                [[ price ]]
+
+            </span>
+        </ul>
+        <span v-on:click="recievePrice()">            
+            <span v-for="price in pricesindex">
+            [[ price ]]
+
+        </span>
+    </span>
+    </div>
+</div>
+{% endblock content %}

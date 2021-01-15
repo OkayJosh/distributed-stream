@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.5.3/css/bootstrap.min.css" integrity="sha512-oc9+XSs1H243/FRN9Rw62Fn8EtxjEYWHXRvjS43YtueEewbS6ObfXcJNyohjHqVKFPoXXUxwc+q1K7Dee6vv9g==" crossorigin="anonymous" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-vue/2.21.2/bootstrap-vue.min.css" integrity="sha512-YnP4Ql71idaMB+/ZG38+1adSSQotdqvixQ+dQg8x/IFA4heIj6i0BC31W5T5QUdK1Uuwa01YdqdcT42q+RldAg==" crossorigin="anonymous" />
+  <title>Commodity Price Index</title>
+</head>
+<body>
+  <div id="app" class="container text-center">
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <ul class="navbar-nav mr-auto">
+          <li class="nav-item">
+            <router-link
+              class="nav-link text-primary"
+              to="/price/"
+            >
+              Go to Prices
+            </router-link>
+          </li>
+        </ul>
+      </nav>
+    <div>
+        <b-jumbotron>
+          <template #header>Commodity Price Index</template>
+      
+          <template #lead>
+            This is a simple application to create commodity price index
+                including the name of the commodity, price and date.
+          </template>
+      
+          <hr class="my-4">
+      
+          <template>
+            <b-row class="container">
+                <b-col sm="7">
+                    <b-form-input list="my-list-id"></b-form-input>
+                
+                    <datalist id="my-list-id">
+                        <option>Commodity Options</option>
+                        <option v-for="index in indices">[[ index ]]</option>
+                    </datalist>
+                </b-col>
+                <b-col sm="5">
+                    <b-form-input id="type-number" type="number">Price</b-form-input>
+                    <b-popover
+                    target="type-number"
+                    title="Enter Price!"
+                    triggers="hover focus"
+                    content="Enter the price here"
+                  ></b-popover>
+                </b-col>
+            </b-row>
+            <b-button class="mt-2" variant="primary" href="#">Create</b-button>
+          </template>
+      
+        </b-jumbotron>
+      </div>
+    <br>
+    {% block content %}{% endblock content %}
+  </div>
+  <script src="https://unpkg.com/vue"></script>
+  <script src="https://unpkg.com/vue-router"></script>
+  <script src="https://unpkg.com/vuex"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-vue/2.21.2/bootstrap-vue.min.js" integrity="sha512-Z0dNfC81uEXC2iTTXtE0rM18I3ATkwn1m8Lxe0onw/uPEEkCmVZd+H8GTeYGkAZv50yvoSR5N3hoy/Do2hNSkw==" crossorigin="anonymous"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-vue/2.21.2/bootstrap-vue-icons.min.js" integrity="sha512-5czZ3eLMCVT2wJXRhx0yLN2TZzA2iuncwX2s3P1MTv3X8GHxfKRtcoaTkzEzM0g38iXyuYlES8kbfXNYe7zeTA==" crossorigin="anonymous"></script>
+  {% block script %}{% endblock script %}
+
+  <template id="price-list-template">
+    <div class="price-list">
+      <h2>Prices</h2>
+      <price-item
+        v-for="price in prices"
+        v-bind:key="price.slug"
+        v-bind:name="price.name"
+        v-bind:slug="price.slug"
+        v-bind:content="price.price"
+      ></price-item>
+    </div>
+  </template>
+
+  <template id="price-item-template">
+    <div class="price-item">
+      <span v-if="$route.params.slug">
+        <h3>
+          <router-link
+            v-bind:to="'/price/' + $route.params.slug + '/'"
+            v-html="$store.getters.getPriceBySlug($route.params.slug)['name']"
+          ></router-link>
+        </h3>
+        <div v-html="$store.getters.getPriceBySlug($route.params.slug)['price']"></div>
+      </span>
+      <span v-else>
+        <h3>
+          <router-link
+            v-bind:to="'/price/' + slug + '/'"
+            v-html="name"
+         ></router-link>
+       </h3>
+        <div v-html="price"></div>
+        <hr />
+      </span>
+    </div>
+  </template>
+  <script>
+
+      //components
+    PriceList = Vue.component('price-list', {
+        data: function () { return { prices: app.data().prices } },
+        template: '#price-list-template',
+      }); 
+
+    PriceItem = Vue.component('article-item', {
+        delimiters: ['[[', ']]'],
+        props: ['name', 'slug', 'price'],
+        template: '#price-item-template',
+    });  
+      //routers
+    const routes = [
+        { component: PriceList, path: '/price/', },
+        { component: PriceItem, path: '/price/:slug/', },
+      ]
+
+      const router = new VueRouter({
+        mode: 'history',
+        routes: routes,
+      })
+    const app = new Vue({
+            router,
+            delimiters: ['[[', ']]'], 
+            el:"#app",
+            data() {
+                return {
+                    connection: null,
+                    message: "",
+                    indices: ['Maize', 'Soyabeans', 'Paddy-Rice', 'Cocoa', 'Sorghum', 'Ginger'],
+                    pricesindex: [],
+                }
+                
+            },
+            method: {
+                recievePrice: function() {
+                    try{
+                        console.log('Trying to recive message')
+                        this.connection.onmessage = ({data}) => {
+                            this.pricesindex = JSON.stringify(JSON.parse(data), null, 2);
+                            console.log(this.pricesindex);
+                        }
+                }
+                catch(err) {
+                    console.log(err);
+                 }  
+                }
+            },
+            created(){
+    
+                try {
+                console.log("Starting connection to WebSocket Server")
+                this.connection = new WebSocket("ws://localhost:8080/price/");
+
+                this.connection.addEventListener('open', function (event) {
+                    // this.connection.send('Hello Server!');
+                });
+
+                // Listen for messages
+                // ws.addEventListener('message', function (event) {
+                //     this.pricesindex = JSON.stringify(JSON.parse(event.data), null, 2);
+                //     console.log('Message from server ', this.pricesindex);
+                // });
+                this.connection.onmessage = ({data}) => {
+                    
+                    this.pricesindex = JSON.stringify(JSON.parse(data), null, 2);
+                    console.log(this.pricesindex);
+                }
+
+                // ws.onclose = ws.onerror = () => {
+                //     clearInterval(timer)
+                // }
+                } catch(err) {
+                console.log(err);
+                }    
+            },
+            
+        }).$mount('#app');
+  </script>
+</body>
+</html>
